@@ -1,12 +1,24 @@
 from rest_framework import permissions
 from rest_framework import generics
-
 from django.contrib.auth.models import User
 
-from .serializers import UserSerializer
-from .permissions import IsOwnerOrReadOnly
+from .serializers import (
+    StockSerializer,
+    OptionSerializer,
+    FinancialCalculatorSerializer,
+    StrategySerializer,
+    ProbabilityOfProfitSerializer,
+    UserSerializer
+)
+from .models import (
+    Stock,
+    Option,
+    FinancialCalculator,
+    Strategy,
+    ProbabilityOfProfit,    
+)
 
-# NOTE The Idiomatic Django Approach - FULL GENERIC
+# Views
 
 class UserList(generics.ListAPIView):
     queryset = User.objects.all()
@@ -16,27 +28,117 @@ class UserDetail(generics.RetrieveAPIView):
     queryset = User.objects.all()
     serializer_class = UserSerializer
 
-from .models import Strategy
-from .serializers import StrategySerializer
+class StockList(generics.ListCreateAPIView):
+    queryset = Stock.objects.all()
+    serializer_class = StockSerializer
+
+class StockDetail(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Stock.objects.all()
+    serializer_class = StockSerializer
+
+class OptionList(generics.ListCreateAPIView):
+    queryset = Option.objects.all()
+    serializer_class = OptionSerializer
+
+class OptionDetail(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Option.objects.all()
+    serializer_class = OptionSerializer
+
+class FinancialCalculatorList(generics.ListCreateAPIView):
+    queryset = FinancialCalculator.objects.all()
+    serializer_class = FinancialCalculatorSerializer
+
+class FinancialCalculatorDetail(generics.RetrieveUpdateDestroyAPIView):
+    queryset = FinancialCalculator.objects.all()
+    serializer_class = FinancialCalculatorSerializer
 
 class StrategyList(generics.ListCreateAPIView):
-    """
-    List all code strategy, or create a new strategy.
-    """    
     queryset = Strategy.objects.all()
     serializer_class = StrategySerializer
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly,IsOwnerOrReadOnly]    
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
     def perform_create(self, serializer):
-        serializer.save(owner=self.request.user)
+        serializer.save(created_by=self.request.user)
 
 class StrategyDetail(generics.RetrieveUpdateDestroyAPIView):
-    """
-    Retrieve, update or delete a code strategy.
-    """
     queryset = Strategy.objects.all()
     serializer_class = StrategySerializer
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly,IsOwnerOrReadOnly]
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+
+class ProbabilityOfProfitList(generics.ListCreateAPIView):
+    queryset = ProbabilityOfProfit.objects.all()
+    serializer_class = ProbabilityOfProfitSerializer
+
+class ProbabilityOfProfitDetail(generics.RetrieveUpdateDestroyAPIView):
+    queryset = ProbabilityOfProfit.objects.all()
+    serializer_class = ProbabilityOfProfitSerializer
+
+class UserStrategies(generics.RetrieveUpdateDestroyAPIView):
+    queryset = ProbabilityOfProfit.objects.all()
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = ProbabilityOfProfitSerializer
+
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from rest_framework.reverse import reverse
+
+# User endpoints
+
+class UserStrategiesListView(generics.GenericAPIView):
+    serializer_class = StrategySerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        # Filter strategies for the currently authenticated user
+        return Strategy.objects.filter(owner=self.request.user)
+
+@api_view(['GET'])
+def api_root(request, format=None):
+    return Response({
+        'users': reverse('user-list', request=request, format=format),
+        'strategies': reverse('strategy-list', request=request, format=format),
+        'stocks': reverse('stock-list', request=request, format=format),
+        'option': reverse('option-list', request=request, format=format)
+    })
+# from rest_framework import permissions
+# from rest_framework import generics
+
+# from django.contrib.auth.models import User
+
+# from .serializers import UserSerializer
+# from .permissions import IsOwnerOrReadOnly
+
+# # NOTE The Idiomatic Django Approach - FULL GENERIC
+
+# class UserList(generics.ListAPIView):
+#     queryset = User.objects.all()
+#     serializer_class = UserSerializer
+
+# class UserDetail(generics.RetrieveAPIView):
+#     queryset = User.objects.all()
+#     serializer_class = UserSerializer
+
+# from .models import Strategy
+# from .serializers import StrategySerializer
+
+# class StrategyList(generics.ListCreateAPIView):
+#     """
+#     List all code strategy, or create a new strategy.
+#     """    
+#     queryset = Strategy.objects.all()
+#     serializer_class = StrategySerializer
+#     permission_classes = [permissions.IsAuthenticatedOrReadOnly,IsOwnerOrReadOnly]    
+
+#     def perform_create(self, serializer):
+#         serializer.save(owner=self.request.user)
+
+# class StrategyDetail(generics.RetrieveUpdateDestroyAPIView):
+#     """
+#     Retrieve, update or delete a code strategy.
+#     """
+#     queryset = Strategy.objects.all()
+#     serializer_class = StrategySerializer
+#     permission_classes = [permissions.IsAuthenticatedOrReadOnly,IsOwnerOrReadOnly]
 
 # NOTE The Mixins Approach - PARTIAL GENERIC
     
@@ -181,23 +283,5 @@ def strategy_detail(request, pk, format=None):
         strategy.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 """
-
-from rest_framework.decorators import api_view
-from rest_framework.response import Response
-from rest_framework.reverse import reverse
 from rest_framework import renderers
 
-class StrategyPinned(generics.GenericAPIView):
-    queryset = Strategy.objects.all()
-    renderer_classes = [renderers.StaticHTMLRenderer]
-
-    def get(self, request, *args, **kwargs):
-        strategy = self.get_object()
-        return Response(strategy.pinned)
-    
-@api_view(['GET'])
-def api_root(request, format=None):
-    return Response({
-        'users': reverse('user-list', request=request, format=format),
-        'strategies': reverse('strategy-list', request=request, format=format)
-    })

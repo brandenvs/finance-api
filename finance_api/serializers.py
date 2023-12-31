@@ -1,5 +1,70 @@
 from rest_framework import serializers
 from rest_framework import permissions
+from django.contrib.auth.models import User
+
+from .models import (
+    Stock,
+    Option,
+    FinancialCalculator,
+    Strategy,
+    ProbabilityOfProfit,
+)
+
+# Serializers
+
+class StockSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Stock
+        fields = '__all__'
+    
+    def create(self, validated_data):
+        return Stock.objects.create(**validated_data)
+
+class OptionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Option
+        fields = '__all__'
+
+    def create(self, validated_data):
+        return Option.objects.create(**validated_data)
+
+class FinancialCalculatorSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = FinancialCalculator
+        fields = '__all__'
+
+    def create(self, validated_data):
+        return FinancialCalculator.objects.create(**validated_data)
+
+class StrategySerializer(serializers.ModelSerializer):
+    created_by = serializers.ReadOnlyField(source='created_by.username')
+    
+    class Meta:
+        model = Strategy
+        fields = '__all__'
+
+    def create(self, validated_data):
+        return Strategy.objects.create(**validated_data)
+    
+class ProbabilityOfProfitSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProbabilityOfProfit
+        fields = '__all__'
+    
+    def create(self, validated_data):
+        return ProbabilityOfProfitSerializer.objects.create(**validated_data)
+
+# User Serializer has Hyperlink endpoint
+class UserSerializer(serializers.ModelSerializer):
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    strategies = serializers.HyperlinkedIdentityField(many=True, view_name='strategy-detail')
+
+    class Meta:
+        model = User
+        fields = ['id', 'username', 'password', 'strategies']
+
+"""from rest_framework import serializers
+from rest_framework import permissions
 
 from .models import Strategy
 
@@ -15,15 +80,9 @@ class StrategySerializer(serializers.HyperlinkedModelSerializer):
                       'strike', 'premium', 'n', 'action', 'owner']
 
     def create(self, validated_data):
-        """
-        Create and return a new `Strategy` instance, given the validated data.
-        """
         return Strategy.objects.create(**validated_data)
 
     def update(self, instance, validated_data):
-        """
-        Update and return an existing `Strategy` instance, given the validated data.
-        """
         instance.title = validated_data.get('title', instance.title)
         instance.action_type = validated_data.get('action_type', instance.action_type)
         instance.strike = validated_data.get('strike', instance.strike)
@@ -33,21 +92,12 @@ class StrategySerializer(serializers.HyperlinkedModelSerializer):
         instance.save()
         return instance
 
-# NOTE Not Hyperlinked: class UserSerializer(serializers.ModelSerializer):
-class UserSerializer(serializers.HyperlinkedModelSerializer):
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
-    # NOTE Not Hyperlinked: strategies = serializers.PrimaryKeyRelatedField(many=True, queryset=Strategy.objects.all())
-    strategies = serializers.HyperlinkedIdentityField(many=True, view_name='strategy-detail')
 
-    class Meta:
-        model = Strategy
-        fields = ['id', 'username', 'password', 'strategies']
-
-# class StrategySerializer(serializers.Serializer):
-#     id = serializers.IntegerField(read_only=True)
-#     name = serializers.CharField(blank=False, max_length=25)
-#     action_type = serializers.CharField(required=True, max_length=25)
-#     strike = serializers.FloatField(required=True)
-#     premium = serializers.FloatField(required=False)
-#     n = serializers.IntegerField(required=False)
-#     action = serializers.CharField(required=True, max_length=25)
+class StrategySerializer(serializers.Serializer):
+    id = serializers.IntegerField(read_only=True)
+    name = serializers.CharField(blank=False, max_length=25)
+    action_type = serializers.CharField(required=True, max_length=25)
+    strike = serializers.FloatField(required=True)
+    premium = serializers.FloatField(required=False)
+    n = serializers.IntegerField(required=False)
+    action = serializers.CharField(required=True, max_length=25)"""

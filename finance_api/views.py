@@ -4,18 +4,15 @@ from django.contrib.auth.models import User
 
 from .serializers import (
     StockSerializer,
-    OptionSerializer,
-    FinancialCalculatorSerializer,
     StrategySerializer,
-    ProbabilityOfProfitSerializer,
-    UserSerializer
+    UserSerializer,
+    StrategyAnalysisResultSerializer
+    
 )
 from .models import (
     Stock,
-    Option,
-    FinancialCalculator,
     Strategy,
-    ProbabilityOfProfit,    
+    StrategyAnalysisResult
 )
 
 # Views
@@ -32,65 +29,45 @@ class StockList(generics.ListCreateAPIView):
     queryset = Stock.objects.all()
     serializer_class = StockSerializer
 
+    def perform_create(self, serializer):
+        serializer.save(owner=self.request.user)
+
 class StockDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = Stock.objects.all()
     serializer_class = StockSerializer
 
-class OptionList(generics.ListCreateAPIView):
-    queryset = Option.objects.all()
-    serializer_class = OptionSerializer
-
-class OptionDetail(generics.RetrieveUpdateDestroyAPIView):
-    queryset = Option.objects.all()
-    serializer_class = OptionSerializer
-
-class FinancialCalculatorList(generics.ListCreateAPIView):
-    queryset = FinancialCalculator.objects.all()
-    serializer_class = FinancialCalculatorSerializer
-
-class FinancialCalculatorDetail(generics.RetrieveUpdateDestroyAPIView):
-    queryset = FinancialCalculator.objects.all()
-    serializer_class = FinancialCalculatorSerializer
+    def perform_create(self, serializer):
+        serializer.save(owner=self.request.user)
 
 class StrategyList(generics.ListCreateAPIView):
     queryset = Strategy.objects.all()
     serializer_class = StrategySerializer
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    permission_classes = [permissions.IsAuthenticated]
 
     def perform_create(self, serializer):
-        serializer.save(created_by=self.request.user)
+        serializer.save(owner=self.request.user)
 
 class StrategyDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = Strategy.objects.all()
     serializer_class = StrategySerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def perform_create(self, serializer):
+        serializer.save(owner=self.request.user)
+
+class StrategyAnalysisResultList(generics.RetrieveUpdateDestroyAPIView):
+    queryset = StrategyAnalysisResult.objects.all()
+    serializer_class = StrategyAnalysisResultSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
-class ProbabilityOfProfitList(generics.ListCreateAPIView):
-    queryset = ProbabilityOfProfit.objects.all()
-    serializer_class = ProbabilityOfProfitSerializer
-
-class ProbabilityOfProfitDetail(generics.RetrieveUpdateDestroyAPIView):
-    queryset = ProbabilityOfProfit.objects.all()
-    serializer_class = ProbabilityOfProfitSerializer
-
-class UserStrategies(generics.RetrieveUpdateDestroyAPIView):
-    queryset = ProbabilityOfProfit.objects.all()
-    permission_classes = [permissions.IsAuthenticated]
-    serializer_class = ProbabilityOfProfitSerializer
+class StrategyAnalysisResultDetail(generics.RetrieveUpdateDestroyAPIView):
+    queryset = StrategyAnalysisResult.objects.all()
+    serializer_class = StrategyAnalysisResultSerializer
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework.reverse import reverse
-
-# User endpoints
-
-class UserStrategiesListView(generics.GenericAPIView):
-    serializer_class = StrategySerializer
-    permission_classes = [permissions.IsAuthenticated]
-
-    def get_queryset(self):
-        # Filter strategies for the currently authenticated user
-        return Strategy.objects.filter(owner=self.request.user)
 
 @api_view(['GET'])
 def api_root(request, format=None):
@@ -98,47 +75,46 @@ def api_root(request, format=None):
         'users': reverse('user-list', request=request, format=format),
         'strategies': reverse('strategy-list', request=request, format=format),
         'stocks': reverse('stock-list', request=request, format=format),
-        'option': reverse('option-list', request=request, format=format)
     })
-# from rest_framework import permissions
-# from rest_framework import generics
 
-# from django.contrib.auth.models import User
+#  NOTE The Idiomatic Django Approach - FULL GENERIC
 
-# from .serializers import UserSerializer
-# from .permissions import IsOwnerOrReadOnly
+"""
+from rest_framework import permissions
+from rest_framework import generics
 
-# # NOTE The Idiomatic Django Approach - FULL GENERIC
+from django.contrib.auth.models import User
 
-# class UserList(generics.ListAPIView):
-#     queryset = User.objects.all()
-#     serializer_class = UserSerializer
+from .serializers import UserSerializer
+from .permissions import IsOwnerOrReadOnly
+"""
 
-# class UserDetail(generics.RetrieveAPIView):
-#     queryset = User.objects.all()
-#     serializer_class = UserSerializer
+"""
+class UserList(generics.ListAPIView):
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
 
-# from .models import Strategy
-# from .serializers import StrategySerializer
+class UserDetail(generics.RetrieveAPIView):
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+"""
 
-# class StrategyList(generics.ListCreateAPIView):
-#     """
-#     List all code strategy, or create a new strategy.
-#     """    
-#     queryset = Strategy.objects.all()
-#     serializer_class = StrategySerializer
-#     permission_classes = [permissions.IsAuthenticatedOrReadOnly,IsOwnerOrReadOnly]    
+"""
+from .models import Strategy
+from .serializers import StrategySerializer
 
-#     def perform_create(self, serializer):
-#         serializer.save(owner=self.request.user)
+class StrategyList(generics.ListCreateAPIView):
+    queryset = Strategy.objects.all()
+    serializer_class = StrategySerializer
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly,IsOwnerOrReadOnly]    
 
-# class StrategyDetail(generics.RetrieveUpdateDestroyAPIView):
-#     """
-#     Retrieve, update or delete a code strategy.
-#     """
-#     queryset = Strategy.objects.all()
-#     serializer_class = StrategySerializer
-#     permission_classes = [permissions.IsAuthenticatedOrReadOnly,IsOwnerOrReadOnly]
+    def perform_create(self, serializer):
+        serializer.save(owner=self.request.user)
+
+class StrategyDetail(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Strategy.objects.all()
+    serializer_class = StrategySerializer
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly,IsOwnerOrReadOnly]"""
 
 # NOTE The Mixins Approach - PARTIAL GENERIC
     

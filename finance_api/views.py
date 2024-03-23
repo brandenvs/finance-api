@@ -1,29 +1,26 @@
-from rest_framework import permissions
-from rest_framework import generics
 from django.contrib.auth.models import User
+from rest_framework import generics, permissions
 
+from .models import Stock, Strategy, StrategyAnalysisResult
 from .serializers import (
     StockSerializer,
+    StrategyAnalysisResultSerializer,
     StrategySerializer,
     UserSerializer,
-    StrategyAnalysisResultSerializer
-    
-)
-from .models import (
-    Stock,
-    Strategy,
-    StrategyAnalysisResult
 )
 
 # Views
+
 
 class UserList(generics.ListAPIView):
     queryset = User.objects.all()
     serializer_class = UserSerializer
 
+
 class UserDetail(generics.RetrieveAPIView):
     queryset = User.objects.all()
     serializer_class = UserSerializer
+
 
 class StockList(generics.ListCreateAPIView):
     queryset = Stock.objects.all()
@@ -32,12 +29,14 @@ class StockList(generics.ListCreateAPIView):
     def perform_create(self, serializer):
         serializer.save(owner=self.request.user)
 
+
 class StockDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = Stock.objects.all()
     serializer_class = StockSerializer
 
     def perform_create(self, serializer):
         serializer.save(owner=self.request.user)
+
 
 class StrategyList(generics.ListCreateAPIView):
     queryset = Strategy.objects.all()
@@ -47,6 +46,7 @@ class StrategyList(generics.ListCreateAPIView):
     def perform_create(self, serializer):
         serializer.save(owner=self.request.user)
 
+
 class StrategyDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = Strategy.objects.all()
     serializer_class = StrategySerializer
@@ -55,27 +55,34 @@ class StrategyDetail(generics.RetrieveUpdateDestroyAPIView):
     def perform_create(self, serializer):
         serializer.save(owner=self.request.user)
 
+
 class StrategyAnalysisResultList(generics.RetrieveUpdateDestroyAPIView):
     queryset = StrategyAnalysisResult.objects.all()
     serializer_class = StrategyAnalysisResultSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+
 
 class StrategyAnalysisResultDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = StrategyAnalysisResult.objects.all()
     serializer_class = StrategyAnalysisResultSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
+
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework.reverse import reverse
 
-@api_view(['GET'])
+
+@api_view(["GET"])
 def api_root(request, format=None):
-    return Response({
-        'users': reverse('user-list', request=request, format=format),
-        'strategies': reverse('strategy-list', request=request, format=format),
-        'stocks': reverse('stock-list', request=request, format=format),
-    })
+    return Response(
+        {
+            "users": reverse("user-list", request=request, format=format),
+            "strategies": reverse("strategy-list", request=request, format=format),
+            "stocks": reverse("stock-list", request=request, format=format),
+        }
+    )
+
 
 #  NOTE The Idiomatic Django Approach - FULL GENERIC
 
@@ -117,7 +124,7 @@ class StrategyDetail(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = [permissions.IsAuthenticatedOrReadOnly,IsOwnerOrReadOnly]"""
 
 # NOTE The Mixins Approach - PARTIAL GENERIC
-    
+
 """
 from rest_framework import status
 from rest_framework.views import APIView
@@ -260,4 +267,3 @@ def strategy_detail(request, pk, format=None):
         return Response(status=status.HTTP_204_NO_CONTENT)
 """
 from rest_framework import renderers
-

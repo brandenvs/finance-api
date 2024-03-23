@@ -66,10 +66,10 @@ WSGI_APPLICATION = 'bcodeAPI.wsgi.application'
 DATABASES = { 
     'default': {
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': 'bcode_api',
-        'USER': 'bcoder',
-        'PASSWORD': 'Silureicky6#',
-        'HOST': '143.42.77.61',
+        'NAME': 'local_postgres',
+        'USER': 'branden',
+        'PASSWORD': 'Markaway86#',
+        'HOST': 'localhost',
         'PORT': '5432',
     }
 }

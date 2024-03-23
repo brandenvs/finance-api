@@ -1,62 +1,95 @@
-from rest_framework import serializers
-from rest_framework import permissions
+import json
 
 from django.contrib.auth.models import User
-import json
-from .models import (
-    Stock,
-    Strategy,
-    StrategyLeg,
-    StrategyAnalysisResult
-)
+from rest_framework import permissions, serializers
+
+from .models import Stock, Strategy, StrategyAnalysisResult, StrategyLeg
 
 # Serializers
 
+
 class UserSerializer(serializers.ModelSerializer):
-    owner = serializers.ReadOnlyField(source='owner.username')
-    strategies = serializers.HyperlinkedIdentityField(many=True, view_name='strategy-list')
+    owner = serializers.ReadOnlyField(source="owner.username")
+    strategies = serializers.HyperlinkedIdentityField(
+        many=True, view_name="strategy-list"
+    )
     permission_classes = [permissions.IsAuthenticated]
 
     class Meta:
         model = User
-        fields = ['id', 'owner', 'username', 'password', 'strategies']
-        
+        fields = ["id", "owner", "username", "password", "strategies"]
+
+
 class StockSerializer(serializers.ModelSerializer):
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
     class Meta:
         model = Stock
-        fields = '__all__'
-    
+        fields = "__all__"
+
     def create(self, validated_data):
         return Stock.objects.create(**validated_data)
+
 
 class StrategyLegSerializer(serializers.ModelSerializer):
     class Meta:
         model = StrategyLeg
-        fields = ['id', 'type', 'strike', 'premium', 'n', 'action', 'prevpos', 'expiration']
+        fields = [
+            "id",
+            "type",
+            "strike",
+            "premium",
+            "n",
+            "action",
+            "prevpos",
+            "expiration",
+        ]
+
 
 class StrategySerializer(serializers.ModelSerializer):
     strategy_legs = StrategyLegSerializer(many=True, read_only=True)
-    owner = serializers.ReadOnlyField(source='owner.username')  # assuming you want to display the username
+    owner = serializers.ReadOnlyField(
+        source="owner.username"
+    )  # assuming you want to display the username
 
     class Meta:
         model = Strategy
-        fields = ['id', 'owner', 'strategy_name', 'stockprice', 'volatility', 'interestrate', 
-                  'minstock', 'maxstock', 'strategy_legs', 'dividendyield', 'profittarg', 
-                  'losslimit', 'optcommission', 'stockcommission', 'compute_the_greeks', 
-                  'compute_expectation', 'use_dates', 'discard_nonbusinessdays', 'country', 
-                  'startdate', 'targetdate', 'days2targetdate', 'distribution', 'nmcprices']
+        fields = [
+            "id",
+            "owner",
+            "strategy_name",
+            "stockprice",
+            "volatility",
+            "interestrate",
+            "minstock",
+            "maxstock",
+            "strategy_legs",
+            "dividendyield",
+            "profittarg",
+            "losslimit",
+            "optcommission",
+            "stockcommission",
+            "compute_the_greeks",
+            "compute_expectation",
+            "use_dates",
+            "discard_nonbusinessdays",
+            "country",
+            "startdate",
+            "targetdate",
+            "days2targetdate",
+            "distribution",
+            "nmcprices",
+        ]
 
     def create(self, validated_data):
-        strategy_legs_data = validated_data.pop('strategy_legs')
+        strategy_legs_data = validated_data.pop("strategy_legs")
         strategy = Strategy.objects.create(**validated_data)
         for leg_data in strategy_legs_data:
             StrategyLeg.objects.create(strategy=strategy, **leg_data)
         return strategy
 
     def update(self, instance, validated_data):
-        strategy_legs_data = validated_data.pop('strategy_legs', None)
+        strategy_legs_data = validated_data.pop("strategy_legs", None)
 
         # Update simple fields
         for field, value in validated_data.items():
@@ -72,37 +105,64 @@ class StrategySerializer(serializers.ModelSerializer):
 
         return instance
 
-class StrategyAnalysisResultSerializer(serializers.ModelSerializer): 
+
+class StrategyAnalysisResultSerializer(serializers.ModelSerializer):
     class Meta:
         model = StrategyAnalysisResult
-        fields = ['id', 'strategy', 'probability_of_profit', 'strategy_cost', 'per_leg_cost', 'profit_ranges', 'minimum_return_in_domain', 'maximum_return_in_domain']
+        fields = [
+            "id",
+            "strategy",
+            "probability_of_profit",
+            "strategy_cost",
+            "per_leg_cost",
+            "profit_ranges",
+            "minimum_return_in_domain",
+            "maximum_return_in_domain",
+        ]
 
     def validate_per_leg_cost(self, value):
         try:
             json.loads(value)  # check if valid JSON
         except ValueError:
-            raise serializers.ValidationError("Invalid format for per_leg_cost. Must be a valid JSON string.")
+            raise serializers.ValidationError(
+                "Invalid format for per_leg_cost. Must be a valid JSON string."
+            )
         return value
 
     def validate_profit_ranges(self, value):
         try:
             json.loads(value)  # check if valid JSON
         except ValueError:
-            raise serializers.ValidationError("Invalid format for profit_ranges. Must be a valid JSON string.")
+            raise serializers.ValidationError(
+                "Invalid format for profit_ranges. Must be a valid JSON string."
+            )
         return value
 
     def create(self, validated_data):
         return StrategyAnalysisResult.objects.create(**validated_data)
 
     def update(self, instance, validated_data):
-        instance.probability_of_profit = validated_data.get('probability_of_profit', instance.probability_of_profit)
-        instance.strategy_cost = validated_data.get('strategy_cost', instance.strategy_cost)
-        instance.per_leg_cost = validated_data.get('per_leg_cost', instance.per_leg_cost)
-        instance.profit_ranges = validated_data.get('profit_ranges', instance.profit_ranges)
-        instance.minimum_return_in_domain = validated_data.get('minimum_return_in_domain', instance.minimum_return_in_domain)
-        instance.maximum_return_in_domain = validated_data.get('maximum_return_in_domain', instance.maximum_return_in_domain)
+        instance.probability_of_profit = validated_data.get(
+            "probability_of_profit", instance.probability_of_profit
+        )
+        instance.strategy_cost = validated_data.get(
+            "strategy_cost", instance.strategy_cost
+        )
+        instance.per_leg_cost = validated_data.get(
+            "per_leg_cost", instance.per_leg_cost
+        )
+        instance.profit_ranges = validated_data.get(
+            "profit_ranges", instance.profit_ranges
+        )
+        instance.minimum_return_in_domain = validated_data.get(
+            "minimum_return_in_domain", instance.minimum_return_in_domain
+        )
+        instance.maximum_return_in_domain = validated_data.get(
+            "maximum_return_in_domain", instance.maximum_return_in_domain
+        )
         instance.save()
         return instance
+
 
 """template[*serializers.py*]
 from rest_framework import serializers

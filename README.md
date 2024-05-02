@@ -1,3 +1,3 @@
 # Financial REST API
 
-``code is unchecked`` ``Commented out code is alternative, less Pythonic approaches.``
+Commented-out code is an alternative, less Pythonic approach.

@@ -1,5 +1,7 @@
-# Financial REST API
+# (Django web framework)Financial REST API
 
-Commented-out code is an alternative, less Pythonic approach.
+> Not finished!
 
-Financial REST API - Predictive stock options/securities. Python drives the REST API endpoints, which can accessed via HTTP requests.
+### Overview
+
+…
